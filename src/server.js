@@ -28,10 +28,15 @@ app.use('/api/teacher', teacherRouter);
 const spec = {
   openapi: '3.0.0',
   info: { title: 'CodeKids API', version: '1.0.0', description: 'Bolalar platformasi backend API' },
+  servers: [
+    { url: 'https://codekids-backend-5asm.onrender.com', description: 'Render Server' },
+    { url: 'http://localhost:4000', description: 'Local Server' }
+  ],
   paths: {
-    '/auth/register': {
+    '/api/auth/register': {
       post: {
         summary: 'Ro\'yxatdan o\'tish',
+        tags: ['Auth'],
         requestBody: {
           required: true,
           content: {
@@ -62,9 +67,10 @@ const spec = {
         responses: { '200': { description: 'Muvaffaqiyatli' }, '400': { description: 'Xato' }, '409': { description: 'Band' } }
       }
     },
-    '/auth/login': {
+    '/api/auth/login': {
       post: {
         summary: 'Login',
+        tags: ['Auth'],
         requestBody: {
           required: true,
           content: {
@@ -83,16 +89,18 @@ const spec = {
         responses: { '200': { description: 'Muvaffaqiyatli' }, '401': { description: 'Noto\'g\'ri' } }
       }
     },
-    '/auth/me': {
+    '/api/auth/me': {
       get: {
         summary: 'O\'z profilingiz',
+        tags: ['Auth'],
         security: [{ bearerAuth: [] }],
         responses: { '200': { description: 'Profil' }, '401': { description: 'Token yo\'q' } }
       }
     },
-    '/contents': {
+    '/api/contents': {
       get: {
         summary: 'Lenta',
+        tags: ['Contents'],
         parameters: [
           { name: 'filter', in: 'query', schema: { type: 'string', enum: ['recent', 'popular', 'top'] } },
           { name: 'topic', in: 'query', schema: { type: 'string' } },
@@ -104,6 +112,7 @@ const spec = {
       },
       post: {
         summary: 'Kontent yaratish',
+        tags: ['Contents'],
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -118,7 +127,8 @@ const spec = {
                   description: { type: 'string', example: '1-sinf uchun' },
                   topic: { type: 'string', example: 'matematik' },
                   level: { type: 'integer', example: 1 },
-                  data: { type: 'object', example: { questions: [] } }
+                  data: { type: 'object', example: { questions: [] } },
+                  is_published: { type: 'boolean', example: true }
                 }
               }
             }
@@ -127,18 +137,31 @@ const spec = {
         responses: { '200': { description: 'Yaratildi' }, '400': { description: 'Xato' } }
       }
     },
-    '/contents/search': { get: { summary: 'Qidiruv', parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string' } }, { name: 'type', in: 'query', schema: { type: 'string' } }, { name: 'topic', in: 'query', schema: { type: 'string' } }], responses: { '200': { description: 'Natijalar' } } } }, '/contents/{id}': {
-      get: { summary: 'Bitta kontent', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Kontent' }, '404': { description: 'Topilmadi' } } },
-      put: { summary: 'Tahrirlash', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' }, topic: { type: 'string' }, level: { type: 'integer' }, data: { type: 'object' } } } } } }, responses: { '200': { description: 'Tahrirlandi' } } },
-      delete: { summary: 'O\'chirish', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'O\'chirildi' } } }
+    '/api/contents/search': {
+      get: {
+        summary: 'Qidiruv',
+        tags: ['Contents'],
+        parameters: [
+          { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
+          { name: 'type', in: 'query', schema: { type: 'string' } },
+          { name: 'topic', in: 'query', schema: { type: 'string' } }
+        ],
+        responses: { '200': { description: 'Natijalar' } }
+      }
     },
-    '/contents/{id}/like': {
-      post: { summary: 'Layk bosish', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Layk bosildi' } } },
-      delete: { summary: 'Laykni olish', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Layk olindi' } } }
+    '/api/contents/{id}': {
+      get: { summary: 'Bitta kontent', tags: ['Contents'], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Kontent' }, '404': { description: 'Topilmadi' } } },
+      put: { summary: 'Tahrirlash', tags: ['Contents'], security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' }, topic: { type: 'string' }, level: { type: 'integer' }, data: { type: 'object' } } } } } }, responses: { '200': { description: 'Tahrirlandi' } } },
+      delete: { summary: 'O\'chirish', tags: ['Contents'], security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'O\'chirildi' } } }
     },
-    '/typing/texts/random': {
+    '/api/contents/{id}/like': {
+      post: { summary: 'Layk bosish', tags: ['Contents'], security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Layk bosildi' } } },
+      delete: { summary: 'Laykni olish', tags: ['Contents'], security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], responses: { '200': { description: 'Layk olindi' } } }
+    },
+    '/api/typing/texts/random': {
       get: {
         summary: 'Random matn',
+        tags: ['Typing'],
         parameters: [
           { name: 'language', in: 'query', schema: { type: 'string', enum: ['uz', 'ru', 'en'], default: 'uz' } },
           { name: 'level', in: 'query', schema: { type: 'string', enum: ['easy', 'medium', 'hard'], default: 'medium' } }
@@ -146,9 +169,10 @@ const spec = {
         responses: { '200': { description: 'Matn' } }
       }
     },
-    '/typing/results': {
+    '/api/typing/results': {
       post: {
         summary: 'Typing natijasi',
+        tags: ['Typing'],
         requestBody: {
           required: true,
           content: {
@@ -174,12 +198,13 @@ const spec = {
         responses: { '200': { description: 'Saqlandi' } }
       }
     },
-    '/typing/best': {
-      get: { summary: 'Eng yaxshi natija', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Natijalar' } } }
+    '/api/typing/best': {
+      get: { summary: 'Eng yaxshi natija', tags: ['Typing'], security: [{ bearerAuth: [] }], responses: { '200': { description: 'Natijalar' } } }
     },
-    '/labyrinth/rooms': {
+    '/api/labyrinth/rooms': {
       post: {
         summary: 'Labirint xonasi yaratish',
+        tags: ['Labirint'],
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -200,9 +225,10 @@ const spec = {
         responses: { '200': { description: 'Xona yaratildi' } }
       }
     },
-    '/labyrinth/rooms/{code}/join': {
+    '/api/labyrinth/rooms/{code}/join': {
       post: {
         summary: 'Labirintga qo\'shilish',
+        tags: ['Labirint'],
         parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
@@ -222,9 +248,10 @@ const spec = {
         responses: { '200': { description: 'Qo\'shildi' } }
       }
     },
-    '/rooms': {
+    '/api/rooms': {
       post: {
         summary: 'Xona yaratish',
+        tags: ['Rooms'],
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -246,9 +273,10 @@ const spec = {
         responses: { '200': { description: 'Xona yaratildi' } }
       }
     },
-    '/rooms/{code}/join': {
+    '/api/rooms/{code}/join': {
       post: {
         summary: 'Xonaga qo\'shilish',
+        tags: ['Rooms'],
         parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
@@ -268,10 +296,11 @@ const spec = {
         responses: { '200': { description: 'Qo\'shildi' } }
       }
     },
-    '/teacher/classes': {
-      get: { summary: 'Sinflar', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Sinflar' } } },
+    '/api/teacher/classes': {
+      get: { summary: 'Sinflar', tags: ['Teacher'], security: [{ bearerAuth: [] }], responses: { '200': { description: 'Sinflar' } } },
       post: {
         summary: 'Sinf yaratish',
+        tags: ['Teacher'],
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -291,8 +320,8 @@ const spec = {
         responses: { '200': { description: 'Yaratildi' } }
       }
     },
-    '/teacher/stats': {
-      get: { summary: 'Statistika', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Statistika' } } }
+    '/api/teacher/stats': {
+      get: { summary: 'Statistika', tags: ['Teacher'], security: [{ bearerAuth: [] }], responses: { '200': { description: 'Statistika' } } }
     }
   },
   components: {
