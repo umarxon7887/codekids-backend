@@ -3,7 +3,6 @@ import { q } from '../db.js';
 import { auth, optionalAuth } from '../middleware.js';
 export const router = Router();
 
-// MUHIM: /search route /:id dan OLDIN bo'lishi kerak!
 router.get('/search', optionalAuth, async (req, res) => {
   const { q: search, type, topic } = req.query;
   if (!search) return res.json([]);
@@ -45,20 +44,31 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
-  const { type, title, description, topic, level, data } = req.body;
+  const { type, title, description, topic, level, data, is_published } = req.body;
   if (!type || !['questions', 'typing_text'].includes(type)) return res.status(400).json({ error: 'Noto\'g\'ri tur' });
   if (!title || title.length < 3) return res.status(400).json({ error: 'Sarlavha kamida 3 belgi' });
   if (!topic || !data) return res.status(400).json({ error: 'Mavzu va data majburiy' });
-  const r = await q(`INSERT INTO contents (author_id, type, title, description, topic, level, data) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`, [req.user.id, type, title, description || '', topic, level || 1, JSON.stringify(data)]);
+  
+  // MUHIM: is_published qo'shildi
+  const r = await q(
+    `INSERT INTO contents (author_id, type, title, description, topic, level, data, is_published) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`, 
+    [req.user.id, type, title, description || '', topic, level || 1, JSON.stringify(data), is_published || false]
+  );
   res.json(r.rows[0]);
 });
 
 router.put('/:id', auth, async (req, res) => {
-  const { title, description, topic, level, data } = req.body;
+  const { title, description, topic, level, data, is_published } = req.body;
   const existing = await q('SELECT * FROM contents WHERE id = $1 AND author_id = $2', [req.params.id, req.user.id]);
   if (!existing.rows.length) return res.status(404).json({ error: 'Topilmadi yoki sizniki emas' });
-  if (existing.rows[0].is_published) return res.status(400).json({ error: 'Published kontentni tahrirlash mumkin emas' });
-  const r = await q(`UPDATE contents SET title = $1, description = $2, topic = $3, level = $4, data = $5, updated_at = NOW() WHERE id = $6 RETURNING *`, [title, description, topic, level, JSON.stringify(data), req.params.id]);
+  if (existing.rows[0].is_published && is_published === false) return res.status(400).json({ error: 'Published kontentni yopib bo\'lmaydi' }); // Xavfsizlik
+  
+  const r = await q(
+    `UPDATE contents SET title = $1, description = $2, topic = $3, level = $4, data = $5, is_published = COALESCE($6, is_published), updated_at = NOW() 
+     WHERE id = $7 RETURNING *`,
+    [title, description, topic, level, JSON.stringify(data), is_published, req.params.id]
+  );
   res.json(r.rows[0]);
 });
 
@@ -66,12 +76,6 @@ router.delete('/:id', auth, async (req, res) => {
   const r = await q('DELETE FROM contents WHERE id = $1 AND author_id = $2 RETURNING id', [req.params.id, req.user.id]);
   if (!r.rows.length) return res.status(404).json({ error: 'Topilmadi yoki sizniki emas' });
   res.json({ ok: true });
-});
-
-router.post('/:id/publish', auth, async (req, res) => {
-  const r = await q('UPDATE contents SET is_published = TRUE WHERE id = $1 AND author_id = $2 RETURNING *', [req.params.id, req.user.id]);
-  if (!r.rows.length) return res.status(404).json({ error: 'Topilmadi yoki sizniki emas' });
-  res.json(r.rows[0]);
 });
 
 router.post('/:id/like', auth, async (req, res) => {
