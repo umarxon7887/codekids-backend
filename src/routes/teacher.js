@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { q } from '../db.js';
-import { auth, teacherOnly } from '../middleware.js';
+import { auth, teacherOnly } from '../middleware/auth.js';
 export const router = Router();
 router.use(auth, teacherOnly);
 

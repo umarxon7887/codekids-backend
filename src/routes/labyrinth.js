@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { q } from '../db.js';
-import { auth, optionalAuth } from '../middleware.js';
+import { auth, optionalAuth } from '../middleware/auth.js';
 export const router = Router();
 
 router.post('/solo/finish', optionalAuth, async (req, res) => {

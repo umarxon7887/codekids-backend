@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { q } from '../db.js';
-import { sign, auth } from '../middleware.js';
+import { sign, auth } from '../middleware/auth.js';
 export const router = Router();
 router.post('/register', async (req, res) => {
   const { nickname, email, password, role = 'student', teacherProfile } = req.body;
